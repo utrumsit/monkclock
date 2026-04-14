@@ -1,0 +1,4 @@
+ephem>=4.0
+rich>=13.0
+timezonefinder>=6.0
+art>=6.0
