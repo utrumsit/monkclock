@@ -122,7 +122,7 @@ python monkclock.py
 
 ### Your Location (Oklahoma, April)
 ```bash
-$ python monkclock.py
+$ python monkclock.py --lat 37.7749 --lon -122.4194
    __  ___  ____    _  __   __ __
   /  |/  / / __ \  / |/ /  / //_/
  / /|_/ / / /_/ / /    /  / ,<   
@@ -146,7 +146,7 @@ Monk Day Hours: 65.5 min each
 Monk Night Hours: 54.5 min each
 This hour: 65.5 min
 
-Location: 36.367, -95.664
+Location: 37.7749, -122.4194
 ```
 
 ### With Sundial
