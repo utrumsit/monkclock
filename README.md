@@ -46,7 +46,7 @@ python monkclock.py --live
 python monkclock.py --live --clock
 
 # Set your location (once, saved to ~/.config/monkclock/config)
-python monkclock.py --set-location 36.367 -95.664
+python monkclock.py --set-location 37.7749 -122.4194
 
 # Use different location (overrides saved)
 python monkclock.py --lat 51.5074 --lon -0.1278
@@ -102,8 +102,8 @@ This tells you how far through the sun-based day you are.
 
 Location is stored in `~/.config/monkclock/config`:
 ```
-latitude=36.367
-longitude=-95.664
+latitude=37.7749
+longitude=-122.4194
 ```
 
 Or use environment variables:
