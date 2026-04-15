@@ -182,38 +182,39 @@ def format_ordinal(n):
 
 def get_approx_digital(monk_info):
     """
-    Get monk time as hours after sunrise.
+    Get monk time as hours after sunrise (day) or after sunset (night).
     """
     hour = monk_info["hour"]
     progress = monk_info["progress"]
     total_hours = (hour - 1) + progress
     
     if total_hours == int(total_hours):
-        return f"{int(total_hours)} hours after sunrise"
-    
-    frac = total_hours - int(total_hours)
-    frac_str = ""
-    if frac < 0.125:
-        pass
-    elif frac < 0.25:
-        frac_str = "⅛"
-    elif frac < 0.375:
-        frac_str = "¼"
-    elif frac < 0.5:
-        frac_str = "⅜"
-    elif frac < 0.625:
-        frac_str = "½"
-    elif frac < 0.75:
-        frac_str = "⅝"
-    elif frac < 0.875:
-        frac_str = "¾"
+        total_str = f"{int(total_hours)}"
     else:
-        frac_str = "⅞"
+        frac = total_hours - int(total_hours)
+        frac_str = ""
+        if frac < 0.125:
+            frac_str = ""
+        elif frac < 0.25:
+            frac_str = "⅛"
+        elif frac < 0.375:
+            frac_str = "¼"
+        elif frac < 0.5:
+            frac_str = "⅜"
+        elif frac < 0.625:
+            frac_str = "½"
+        elif frac < 0.75:
+            frac_str = "⅝"
+        elif frac < 0.875:
+            frac_str = "¾"
+        else:
+            frac_str = "⅞"
+        total_str = f"{int(total_hours)}{frac_str}"
     
-    if frac_str:
-        return f"{int(total_hours)}{frac_str} hours after sunrise"
+    if monk_info["period"] == "night":
+        return f"{total_str} hours after sunset"
     else:
-        return f"{total_hours:.1f} hours after sunrise"
+        return f"{total_str} hours after sunrise"
 
 
 def format_time(dt):
