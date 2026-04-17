@@ -46,6 +46,9 @@ except ImportError:
 DEFAULT_LAT = "37.7749"
 DEFAULT_LON = "-122.4194"
 
+# Cache for sun times — expensive to compute, only changes once per day
+_sun_cache = {"date": None, "sunrise": None, "sunset": None}
+
 
 def load_config():
     """Load location from config file or environment."""
@@ -86,7 +89,12 @@ def get_sun_times(lat, lon, date=None):
     """
     if date is None:
         date = datetime.datetime.now()
-    
+    today = date.date()
+
+    # Check cache first
+    if _sun_cache["date"] == today and _sun_cache["sunrise"] is not None:
+        return _sun_cache["sunrise"], _sun_cache["sunset"]
+
     obs = ephem.Observer()
     obs.lat = lat
     obs.lon = lon
@@ -117,6 +125,11 @@ def get_sun_times(lat, lon, date=None):
     ss_utc = ss_raw.datetime().replace(tzinfo=datetime.timezone.utc)
     sunset_local = ss_utc.astimezone(target_tz)
     
+    # Cache the result
+    _sun_cache["date"] = today
+    _sun_cache["sunrise"] = sunrise_local
+    _sun_cache["sunset"] = sunset_local
+
     return sunrise_local, sunset_local
 
 
@@ -371,7 +384,7 @@ def create_display(lat, lon, console, show_clock=False):
 
 def run_live(console, lat, lon, show_clock=False):
     """Run the live display."""
-    with Live(console=console, screen=True, refresh_per_second=1) as live:
+    with Live(console=console, screen=True, refresh_per_second=1/60) as live:
         while True:
             main_time, progress_text, details, monk_info, clock_str = create_display(lat, lon, console, show_clock)
             
