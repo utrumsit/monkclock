@@ -2,127 +2,225 @@
 
 **Sun-based time for the modern monk.**
 
-A digital clock that tells time according to the position of the sun, not an arbitrary timezone. Daylight and nighttime are each divided into 12 equal hours—their lengths vary with the seasons.
+A digital clock that follows the sun instead of your phone's clock. Daylight and nighttime are each divided into 12 hours—but those hours change length with the seasons. In summer, each daylight hour is longer. In winter, each daylight hour is shorter.
 
-![Monk Clock](https://img.shields.io/badge/Monk%20Time-Sunrise-blue)
-![Python](https://img.shields.io/badge/Python-3.10+-green)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+---
 
-## The Idea
+## Two Ways to Run Monk Clock
 
-Traditional clocks force the sun to fit our schedule. Monk Clock inverts this: your day starts at sunrise and ends at sunset. In summer, daylight hours are longer (more time to work!). In winter, they're shorter (more time to rest!). The monks would approve.
+### 🖼️ Window Mode (Easiest for Beginners)
+Opens a clock window on your computer. Just looks at it and closes when you're done.
 
 ```
-Monk Time:  "7¼ hours after sunrise"
-Standard:   2:05:23 PM
-Daylight:   13h 6m
-Monk Day Hours:   65.5 min each
-Monk Night Hours: 54.5 min each
+python monkclock_gui.py
 ```
 
-## Installation
+### 💻 Terminal Mode (For Power Users)
+Shows colorful time information in your command prompt. Can also display a live-updating sundial.
+
+```
+python monkclock.py                # Quick check
+python monkclock.py --live         # Updates every second
+python monkclock.py --live --clock # Live sundial!
+```
+
+---
+
+## Installation (One-Time Setup)
+
+### 1. Install Python 3.13
+
+Download from [python.org](https://www.python.org/downloads/) if you don't have it. (Python 3.13 includes the graphics library needed for the window mode.)
+
+### 2. Set Up Monk Clock
 
 ```bash
-git clone https://github.com/yourusername/monkclock.git
+# Navigate to the Monk Clock folder
 cd monkclock
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Create a virtual environment (keeps Monk Clock's files separate)
+python3.13 -m venv venv
+
+# Turn it on (do this every time you open a new terminal)
+source venv/bin/activate
+
+# Install everything Monk Clock needs
 pip install ephem rich timezonefinder art
 ```
 
-## Quick Start
+### 3. Tell Monk Clock Where You Are
 
 ```bash
-# Basic display
-python monkclock.py
-
-# With sundial
-python monkclock.py --clock
-
-# Live updating TUI
-python monkclock.py --live
-
-# Live with sundial
-python monkclock.py --live --clock
-
-# Set your location (once, saved to ~/.config/monkclock/config)
 python monkclock.py --set-location 37.7749 -122.4194
-
-# Use different location (overrides saved)
-python monkclock.py --lat 51.5074 --lon -0.1278
 ```
+
+Replace those numbers with your own latitude and longitude (find them at [latlong.net](https://latlong.net)).
+
+Your location is saved and remembered—you only need to do this once.
+
+---
+
+## How to Run
+
+### Window Mode (Recommended for Most People)
+
+```bash
+source venv/bin/activate
+python monkclock_gui.py
+```
+
+A clock window opens showing:
+- **The current monk hour** (e.g., "5th Hour")
+- **Day or Night** (color changes—warm yellow for day, soft blue for night)
+- **Progress bar** showing how far you are through the current hour
+- **Sunrise and sunset times** for today
+- **Standard clock time** for comparison
+
+Close the window when you're done.
+
+### Terminal Mode
+
+**One-time check:**
+```bash
+python monkclock.py
+```
+
+**Live display (updates automatically):**
+```bash
+python monkclock.py --live
+```
+
+**With ASCII sundial:**
+```bash
+python monkclock.py --live --clock
+```
+
+The sundial shows a shadow that moves continuously, pointing to your current position in the day.
+
+---
+
+## Understanding the Display
+
+### The Monk Hour
+
+Monk time divides the day into 12 hours and the night into 12 hours. Each "monk hour" can be any length from 30 minutes to 90 minutes, depending on the season and where you live.
+
+You don't see "2:30 PM." Instead, you see something like:
+
+- **"7¼ hours after sunrise"** — how far through the daylight you are
+- **"3rd Hour of Day"** — you're in the third hour since sunrise
+
+### The Progress Bar
+
+The progress bar shows how far you are through the current hour:
+
+```
+[████████░░░░░░░░] 67%
+```
+
+If the bar fills up, a new monk hour has begun.
+
+### Variable-Length Hours
+
+In summer (long days):
+- Each daylight hour might be **65-75 minutes**
+- Each night hour might be **50-60 minutes**
+
+In winter (short days):
+- Each daylight hour might be **40-50 minutes**
+- Each night hour might be **65-80 minutes**
+
+At extreme latitudes (like northern Scandinavia), this effect is even more dramatic. The monks would have approved—they prayed when the sun was up, whatever "hour" that happened to be.
+
+---
 
 ## How Monk Time Works
 
-### The Basic Idea
-
-1. **Sunrise** → The 1st Hour begins
-2. **12 hours later** → The 12th Hour ends, sunset
+1. **Sunrise** → The 1st Hour of Day begins
+2. **12 hours later** → The 12th Hour of Day ends (sunset)
 3. **Sunset** → The 1st Hour of Night begins
-4. **12 hours later** → The 12th Hour of Night ends, sunrise
+4. **12 hours later** → The 12th Hour of Night ends (sunrise)
 
-### Variable Hour Lengths
+The sun doesn't care about your 60-minute hours. Neither does Monk Clock.
 
-In summer at mid-latitudes:
-- Each **day hour** ≈ 65 minutes (long daylight)
-- Each **night hour** ≈ 55 minutes (short night)
+---
 
-In winter at high latitudes (London, for example):
-- Each **day hour** ≈ 39 minutes (short daylight)
-- Each **night hour** ≈ 81 minutes (long night)
+## Finding Your Coordinates
 
-The earth doesn't care about our 60-minute hours—why should we?
+1. Go to [latlong.net](https://latlong.net)
+2. Click on your location on the map
+3. Copy the numbers shown as "Latitude" and "Longitude"
 
-### The Sundial Display
+Or search Google for "my coordinates" and look for the numbers.
 
-When using `--clock`, you see an ASCII sundial:
-- **Roman numerals (I-XII)** mark the hours
-- **Gnomon (^)** at center casts the shadow
-- **Shadow (▒)** points to your current position in the day
+---
 
-The shadow moves continuously, showing progress through the current hour and across the day.
+## Setting Your Location
 
-### Digital Readout
-
-Instead of "2:30 PM", you see:
-- `"7¼ hours after sunrise"` — how many monk hours have passed
-
-This tells you how far through the sun-based day you are.
-
-## Features
-
-- **Sun-based hours**: No timezones, no DST, just the sun
-- **Variable hour lengths**: Summer = long days, winter = long nights
-- **Location-aware**: Set your latitude/longitude for accurate sun times
-- **ASCII sundial display**: Traditional look with a modern monk twist
-- **Live mode**: Watch the shadow move in real-time
-- **Rich TUI**: Colorful terminal interface
-
-## Configuration
-
-Location is stored in `~/.config/monkclock/config`:
-```
-latitude=37.7749
-longitude=-122.4194
+**One-time setup:**
+```bash
+python monkclock.py --set-location 37.7749 -122.4194
 ```
 
-Or use environment variables:
+**Override for one session:**
+```bash
+python monkclock.py --lat 51.5074 --lon -0.1278
+```
+
+**Using environment variables:**
 ```bash
 export MONKCLOCK_LAT=51.5074
 export MONKCLOCK_LON=-0.1278
 python monkclock.py
 ```
 
-## Finding Your Coordinates
+Your saved location is stored in `~/.config/monkclock/config`.
 
-- [latlong.net](https://latlong.net) — click your location on the map
-- Or just let Google know and search "my coordinates"
+---
 
-## Examples
+## Troubleshooting
 
-### Your Location (Oklahoma, April)
+### "Module not found" error
+
+Make sure you've activated the virtual environment:
+
 ```bash
-$ python monkclock.py --lat 37.7749 --lon -122.4194
+source venv/bin/activate
+```
+
+You should see `(venv)` at the start of your terminal prompt.
+
+### Window doesn't open (macOS)
+
+Make sure you're using the GUI version:
+
+```bash
+python monkclock_gui.py
+```
+
+If it still doesn't work, check that you installed Python 3.13 (not 3.12 or 3.14).
+
+### Times seem wrong
+
+Make sure your latitude and longitude are correct. [latlong.net](https://latlong.net) is the easiest way to find them.
+
+### "ephem" not found even after install
+
+Try reinstalling:
+
+```bash
+pip install --upgrade ephem timezonefinder
+```
+
+---
+
+## Example Output
+
+### Window Mode
+Opens a window with a large clock display, progress bar, and today's sun times.
+
+### Terminal Mode
+```
    __  ___  ____    _  __   __ __
   /  |/  / / __ \  / |/ /  / //_/
  / /|_/ / / /_/ / /    /  / ,<   
@@ -138,26 +236,16 @@ of the Day
 
 Approximate Digital: 6¾ hours after sunrise
 
-Standard Time: 1:58:19 PM
+Standard Time: 2:05:23 PM
 Sunrise: 6:50 AM
 Sunset: 7:56 PM
 Daylight: 13h 6m
 Monk Day Hours: 65.5 min each
 Monk Night Hours: 54.5 min each
-This hour: 65.5 min
-
-Location: 37.7749, -122.4194
 ```
 
 ### With Sundial
-```bash
-$ python monkclock.py --clock
-
-The 7th Hour of Day
-of the Day
-
-6¾ hours after sunrise
-
+```
         ^
       · XII ·
     XI ·     · I
@@ -178,15 +266,10 @@ of the Day
 Standard: 2:01:57 PM
 Sunrise: 6:50 AM
 Sunset: 7:56 PM
-Daylight: 13h 6m
-Monk Day Hrs: 65.5 min
-Monk Night Hrs: 54.5 min
 ```
 
-### London (Winter!)
-```bash
-$ python monkclock.py --lat 51.5074 --lon -0.1278
-
+### London in Winter
+```
 The 10th Hour of Day
 of the Day
 
@@ -198,12 +281,11 @@ Sunset: 3:54 PM
 Daylight: 7h 51m
 Monk Day Hours: 39.3 min each
 Monk Night Hours: 80.7 min each
-This hour: 39.3 min
-
-Location: 51.5074, -0.1278
 ```
 
 Winter in London: each day hour is only 39 minutes! But each night hour is 81 minutes. The monks would have approved of long winter nights for prayer and rest.
+
+---
 
 ## Philosophy
 
@@ -214,16 +296,29 @@ Modern time is arbitrary: 60-minute hours, 24-hour days, timezone boundaries tha
 
 This is a fun project, not a serious timekeeping system. Don't use it to schedule meetings unless you want confused colleagues.
 
+---
+
 ## Dependencies
 
-- **ephem**: Astronomical calculations for sunrise/sunset
-- **rich**: Terminal UI framework
-- **timezonefinder**: Convert coordinates to local timezone
-- **art**: ASCII art for the splash screen
+- **ephem**: Calculates sunrise and sunset times
+- **rich**: Colorful terminal display
+- **timezonefinder**: Converts your location to local time
+- **art**: ASCII art title
+- **tkinter**: Graphics for window mode (included with Python 3.13)
 
-## License
+---
 
-MIT — Do whatever you want with it. May your hours be as variable as the seasons.
+## Quick Reference
+
+| What you want | Command |
+|---------------|---------|
+| Open clock window | `python monkclock_gui.py` |
+| Quick time check | `python monkclock.py` |
+| Live updating display | `python monkclock.py --live` |
+| Live with sundial | `python monkclock.py --live --clock` |
+| Set your location | `python monkclock.py --set-location LAT LON` |
+
+*All commands run from the monkclock folder with `source venv/bin/activate` first.*
 
 ---
 
