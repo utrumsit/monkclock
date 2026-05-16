@@ -11,14 +11,16 @@ A digital clock that follows the sun instead of your phone's clock. Daylight and
 ### 🖼️ Window Mode (Easiest for Beginners)
 Opens a clock window on your computer. Just looks at it and closes when you're done.
 
-```
+```bash
+monkclock
+# or
 python monkclock_gui.py
 ```
 
 ### 💻 Terminal Mode (For Power Users)
 Shows colorful time information in your command prompt. Can also display a live-updating sundial.
 
-```
+```bash
 python monkclock.py                # Quick check
 python monkclock.py --live         # Updates every second
 python monkclock.py --live --clock # Live sundial!
@@ -26,29 +28,28 @@ python monkclock.py --live --clock # Live sundial!
 
 ---
 
-## Installation (One-Time Setup)
+## Installation
 
-### 1. Install Python 3.13
-
-Download from [python.org](https://www.python.org/downloads/) if you don't have it. (Python 3.13 includes the graphics library needed for the window mode.)
-
-### 2. Set Up Monk Clock
+### 1. Set Up the Virtual Environment
 
 ```bash
 # Navigate to the Monk Clock folder
 cd monkclock
 
 # Create a virtual environment (keeps Monk Clock's files separate)
-python3.13 -m venv venv
+python3 -m venv venv
 
-# Turn it on (do this every time you open a new terminal)
+# Activate it
 source venv/bin/activate
 
+# Install pip (if needed)
+python -m ensurepip
+
 # Install everything Monk Clock needs
-pip install ephem rich timezonefinder art
+pip install ephem rich timezonefinder pillow art
 ```
 
-### 3. Tell Monk Clock Where You Are
+### 2. Tell Monk Clock Where You Are
 
 ```bash
 python monkclock.py --set-location 37.7749 -122.4194
@@ -58,6 +59,14 @@ Replace those numbers with your own latitude and longitude (find them at [latlon
 
 Your location is saved and remembered—you only need to do this once.
 
+### 3. Install the Command-Line Launcher (Optional)
+
+```bash
+# This lets you run 'monkclock' from anywhere
+cp monkclock_launcher.sh ~/.local/bin/monkclock
+chmod +x ~/.local/bin/monkclock
+```
+
 ---
 
 ## How to Run
@@ -65,8 +74,12 @@ Your location is saved and remembered—you only need to do this once.
 ### Window Mode (Recommended for Most People)
 
 ```bash
-source venv/bin/activate
-python monkclock_gui.py
+monkclock
+```
+
+Or directly:
+```bash
+./venv/bin/python monkclock_gui.py
 ```
 
 A clock window opens showing:
@@ -190,15 +203,22 @@ source venv/bin/activate
 
 You should see `(venv)` at the start of your terminal prompt.
 
-### Window doesn't open (macOS)
+### Window doesn't open
 
-Make sure you're using the GUI version:
+The GUI requires GTK4. On Linux, this is usually pre-installed. If not:
 
 ```bash
-python monkclock_gui.py
+# Ubuntu/Debian
+sudo apt install libgtk-4-1
+
+# Fedora
+sudo dnf install gtk4
 ```
 
-If it still doesn't work, check that you installed Python 3.13 (not 3.12 or 3.14).
+On macOS, you may need to install GTK4 via Homebrew:
+```bash
+brew install gtk4
+```
 
 ### Times seem wrong
 
@@ -206,7 +226,7 @@ Make sure your latitude and longitude are correct. [latlong.net](https://latlong
 
 ### "ephem" not found even after install
 
-Try reinstalling:
+Make sure the venv is activated, then:
 
 ```bash
 pip install --upgrade ephem timezonefinder
@@ -303,8 +323,9 @@ This is a fun project, not a serious timekeeping system. Don't use it to schedul
 - **ephem**: Calculates sunrise and sunset times
 - **rich**: Colorful terminal display
 - **timezonefinder**: Converts your location to local time
+- **pillow**: Image processing (for some displays)
 - **art**: ASCII art title
-- **tkinter**: Graphics for window mode (included with Python 3.13)
+- **GTK4**: Graphics for window mode (pre-installed on most Linux systems)
 
 ---
 
@@ -312,13 +333,13 @@ This is a fun project, not a serious timekeeping system. Don't use it to schedul
 
 | What you want | Command |
 |---------------|---------|
-| Open clock window | `python monkclock_gui.py` |
+| Open clock window | `monkclock` or `./venv/bin/python monkclock_gui.py` |
 | Quick time check | `python monkclock.py` |
 | Live updating display | `python monkclock.py --live` |
 | Live with sundial | `python monkclock.py --live --clock` |
 | Set your location | `python monkclock.py --set-location LAT LON` |
 
-*All commands run from the monkclock folder with `source venv/bin/activate` first.*
+*For the GUI, you can use `monkclock` command if you installed the launcher, or run it directly from the venv.*
 
 ---
 

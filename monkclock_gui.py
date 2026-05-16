@@ -1,17 +1,23 @@
-#!/opt/homebrew/bin/python3.13
+#!/usr/bin/env python3
 """
 Monk Clock GUI - A sun-based time system
 Low-CPU alternative to the Rich TUI version.
 
-Requires: Python 3.13 (has tkinter built-in; 3.14 does not)
+Uses GTK4 for cross-platform GUI support.
 Run directly: ./monkclock_gui.py
 Dependencies: ephem, timezonefinder (install with pip if needed)
 """
 
 import datetime
-import math
-import tkinter as tk
-from tkinter import font as tkfont
+import sys
+import os
+
+# Add system site-packages for GTK
+sys.path.insert(0, '/usr/lib/python3/dist-packages')
+
+import gi
+gi.require_version('Gtk', '4.0')
+from gi.repository import Gtk, Gdk, GLib
 
 # Constants
 DEFAULT_LAT = "37.7749"
@@ -21,7 +27,6 @@ UPDATE_INTERVAL = 60000  # milliseconds between updates (1 minute)
 
 def load_config():
     """Load location from config file or environment."""
-    import os
     config_path = os.path.expanduser("~/.config/monkclock/config")
     
     if os.path.exists(config_path):
@@ -127,116 +132,130 @@ def format_ordinal(n):
     return f"{n}{suffix}"
 
 
-class MonkClockGUI:
+class MonkClockGUI(Gtk.Application):
     def __init__(self, lat, lon):
+        super().__init__(application_id='com.monkclock.app')
         self.lat = lat
         self.lon = lon
-        self.root = tk.Tk()
-        self.root.title("Monk Clock")
-        self.root.configure(bg="#1a1a2e")
-        self.root.resizable(False, False)
         
         # Colors
-        self.bg_color = "#1a1a2e"
-        self.day_color = "#f4d35e"      # warm yellow for day
-        self.night_color = "#7b8cde"     # soft blue for night
-        self.text_color = "#eaeaea"
-        self.dim_color = "#888888"
-        self.bar_bg = "#3d3d5c"
+        self.bg_color = Gdk.RGBA(0.1, 0.1, 0.18, 1.0)
+        self.day_color = Gdk.RGBA(0.957, 0.827, 0.369, 1.0)  # warm yellow
+        self.night_color = Gdk.RGBA(0.482, 0.549, 0.871, 1.0)  # soft blue
+        self.text_color = Gdk.RGBA(0.918, 0.918, 0.918, 1.0)
+        self.dim_color = Gdk.RGBA(0.533, 0.533, 0.533, 1.0)
+        self.bar_bg = Gdk.RGBA(0.24, 0.24, 0.36, 1.0)
         
-        self.setup_fonts()
-        self.setup_widgets()
+        self.connect('activate', self.on_activate)
+    
+    def on_activate(self, app):
+        self.window = Gtk.ApplicationWindow(application=app, title="Monk Clock")
+        self.window.set_default_size(500, 400)
+        self.window.set_resizable(False)
+        
+        # Set dark theme
+        settings = Gtk.Settings.get_default()
+        settings.set_property("gtk-application-prefer-dark-theme", True)
+        
+        self.setup_ui()
         self.update()
-        self.root.after(UPDATE_INTERVAL, self.tick)
+        
+        # Add timeout for updates
+        GLib.timeout_add(UPDATE_INTERVAL, self.tick)
+        
+        self.window.present()
     
-    def setup_fonts(self):
-        self.title_font = tkfont.Font(family="Helvetica", size=24, weight="bold")
-        self.hour_font = tkfont.Font(family="Helvetica", size=48, weight="bold")
-        self.label_font = tkfont.Font(family="Helvetica", size=14)
-        self.detail_font = tkfont.Font(family="Menlo", size=12)
-    
-    def setup_widgets(self):
-        # Main container
-        self.main_frame = tk.Frame(self.root, bg=self.bg_color, padx=40, pady=30)
-        self.main_frame.pack(fill=tk.BOTH, expand=True)
+    def setup_ui(self):
+        # Main box
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        main_box.set_valign(Gtk.Align.CENTER)
+        main_box.set_halign(Gtk.Align.CENTER)
+        main_box.set_margin_top(40)
+        main_box.set_margin_bottom(40)
+        main_box.set_margin_start(40)
+        main_box.set_margin_end(40)
+        self.window.set_child(main_box)
         
         # Title
-        self.title_label = tk.Label(
-            self.main_frame, text="MONK CLOCK",
-            font=self.title_font, fg=self.day_color, bg=self.bg_color
-        )
-        self.title_label.pack(pady=(0, 20))
+        self.title_label = Gtk.Label(label="MONK CLOCK")
+        self.title_label.set_css_classes(["title"])
+        self.title_label.add_css_class("title-24")
+        main_box.append(self.title_label)
         
         # Hour display
-        self.hour_frame = tk.Frame(self.main_frame, bg=self.bg_color)
-        self.hour_frame.pack(pady=10)
+        hour_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        hour_box.set_halign(Gtk.Align.CENTER)
+        main_box.append(hour_box)
         
-        self.hour_label = tk.Label(
-            self.hour_frame, text="",
-            font=self.hour_font, fg=self.text_color, bg=self.bg_color
-        )
-        self.hour_label.pack()
+        self.hour_label = Gtk.Label()
+        self.hour_label.set_halign(Gtk.Align.CENTER)
+        main_box.append(self.hour_label)
         
-        self.period_label = tk.Label(
-            self.hour_frame, text="",
-            font=self.label_font, fg=self.dim_color, bg=self.bg_color
-        )
-        self.period_label.pack()
+        self.period_label = Gtk.Label()
+        self.period_label.set_halign(Gtk.Align.CENTER)
+        main_box.append(self.period_label)
         
         # Progress bar
-        self.progress_frame = tk.Frame(self.main_frame, bg=self.bg_color)
-        self.progress_frame.pack(pady=20, fill=tk.X, padx=20)
+        self.progress_bar = Gtk.ProgressBar()
+        self.progress_bar.set_size_request(400, 20)
+        main_box.append(self.progress_bar)
         
-        self.progress_bar = tk.Canvas(
-            self.progress_frame, width=400, height=20,
-            bg=self.bar_bg, highlightthickness=0
+        self.progress_label = Gtk.Label()
+        self.progress_label.set_halign(Gtk.Align.CENTER)
+        main_box.append(self.progress_label)
+        
+        # Sunrise/sunset row
+        time_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=40)
+        time_box.set_halign(Gtk.Align.CENTER)
+        main_box.append(time_box)
+        
+        self.sunrise_label = Gtk.Label()
+        self.sunrise_label.set_halign(Gtk.Align.START)
+        time_box.append(self.sunrise_label)
+        
+        self.sunset_label = Gtk.Label()
+        self.sunset_label.set_halign(Gtk.Align.END)
+        time_box.append(self.sunset_label)
+        
+        # Standard time
+        self.standard_time_label = Gtk.Label()
+        self.standard_time_label.set_halign(Gtk.Align.CENTER)
+        main_box.append(self.standard_time_label)
+        
+        # Hour length
+        self.hour_len_label = Gtk.Label()
+        self.hour_len_label.set_halign(Gtk.Align.CENTER)
+        main_box.append(self.hour_len_label)
+        
+        # Apply custom CSS
+        self.apply_css()
+    
+    def apply_css(self):
+        css_provider = Gtk.CssProvider()
+        css = """
+            label {
+                color: rgba(235, 235, 235, 1.0);
+                background: none;
+            }
+            .title-24 {
+                font-size: 24px;
+                font-weight: bold;
+            }
+            .hour-big {
+                font-size: 48px;
+                font-weight: bold;
+            }
+        """
+        css_provider.load_from_string(css)
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(),
+            css_provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
-        self.progress_bar.pack()
-        self.progress_rect = None
-        
-        self.progress_label = tk.Label(
-            self.progress_frame, text="",
-            font=self.label_font, fg=self.dim_color, bg=self.bg_color
-        )
-        self.progress_label.pack(pady=(5, 0))
-        
-        # Details frame
-        self.details_frame = tk.Frame(self.main_frame, bg=self.bg_color)
-        self.details_frame.pack(pady=20, fill=tk.X)
-        
-        self.left_frame = tk.Frame(self.details_frame, bg=self.bg_color)
-        self.left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
-        self.right_frame = tk.Frame(self.details_frame, bg=self.bg_color)
-        self.right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
-        
-        self.sunrise_label = tk.Label(
-            self.left_frame, text="", font=self.detail_font,
-            fg=self.day_color, bg=self.bg_color, anchor="w"
-        )
-        self.sunrise_label.pack(pady=3, fill=tk.X)
-        
-        self.sunset_label = tk.Label(
-            self.right_frame, text="", font=self.detail_font,
-            fg="#e07040", bg=self.bg_color, anchor="w"
-        )
-        self.sunset_label.pack(pady=3, fill=tk.X)
-        
-        self.standard_time_label = tk.Label(
-            self.main_frame, text="", font=self.detail_font,
-            fg=self.dim_color, bg=self.bg_color
-        )
-        self.standard_time_label.pack(pady=(10, 0))
-        
-        self.hour_len_label = tk.Label(
-            self.main_frame, text="", font=self.detail_font,
-            fg=self.dim_color, bg=self.bg_color
-        )
-        self.hour_len_label.pack()
     
     def tick(self):
         self.update()
-        self.root.after(UPDATE_INTERVAL, self.tick)
+        return True  # continue timeout
     
     def update(self):
         now = datetime.datetime.now()
@@ -245,51 +264,36 @@ class MonkClockGUI:
         
         ordinal = format_ordinal(monk_info["hour"])
         period = "Day" if monk_info["period"] == "day" else "Night"
-        period_color = self.day_color if monk_info["period"] == "day" else self.night_color
+        period_hex = "#f4d35e" if monk_info["period"] == "day" else "#7b8cde"
         
-        # Update colors based on period
-        self.hour_label.config(fg=period_color)
-        self.title_label.config(fg=period_color)
-        
-        # Hour display
-        self.hour_label.config(text=f"{ordinal} Hour")
-        self.period_label.config(text=f"of the {period}", fg=period_color)
+        # Hour display with markup
+        self.hour_label.set_markup(f'<span foreground="{period_hex}" size="46000" weight="bold">{ordinal} Hour</span>')
+        self.period_label.set_markup(f'<span foreground="{period_hex}" size="14000">of the {period}</span>')
         
         # Progress bar
-        self.progress_bar.delete("all")
-        bar_width = 400
-        bar_height = 20
-        filled = int(bar_width * monk_info["progress"])
-        
-        self.progress_bar.create_rectangle(
-            0, 0, filled, bar_height,
-            fill=period_color, outline=""
-        )
+        self.progress_bar.set_fraction(monk_info["progress"])
         
         pct = monk_info["progress"] * 100
-        self.progress_label.config(text=f"{pct:.0f}% through this hour")
+        self.progress_label.set_text(f"{pct:.0f}% through this hour")
         
-        # Details
-        self.sunrise_label.config(text=f"↑ Sunrise: {sunrise_local.strftime('%-I:%M %p')}")
-        self.sunset_label.config(text=f"↓ Sunset:  {sunset_local.strftime('%-I:%M %p')}")
-        self.standard_time_label.config(text=f"Standard: {now.strftime('%-I:%M:%S %p')}")
+        # Details with colors
+        self.sunrise_label.set_markup(f'<span foreground="#f4d35e">↑ Sunrise: {sunrise_local.strftime("%_I:%M %p")}</span>')
+        self.sunset_label.set_markup(f'<span foreground="#e07040">↓ Sunset:  {sunset_local.strftime("%_I:%M %p")}</span>')
+        self.standard_time_label.set_text(f"Standard: {now.strftime('%-I:%M:%S %p')}")
         
         hour_len = monk_info["hour_length_seconds"] / 60
-        self.hour_len_label.config(
-            text=f"This hour: {hour_len:.1f} min  |  {self.lat}, {self.lon}"
-        )
+        self.hour_len_label.set_text(f"This hour: {hour_len:.1f} min  |  {self.lat}, {self.lon}")
 
 
 def main():
     lat, lon = load_config()
-    import os
     if os.environ.get("MONKCLOCK_LAT"):
         lat = os.environ.get("MONKCLOCK_LAT", lat)
     if os.environ.get("MONKCLOCK_LON"):
         lon = os.environ.get("MONKCLOCK_LON", lon)
     
     app = MonkClockGUI(lat, lon)
-    app.root.mainloop()
+    app.run(None)
 
 
 if __name__ == "__main__":
